@@ -469,7 +469,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   }
 
   return (
-    <div className="space-y-6 font-mono max-w-7xl mx-auto pb-12">
+    <div className="space-y-6 font-mono w-full pb-12">
       {/* Top Banner / Breadcrumb */}
       <div className="bg-[#0c0c0c] border border-[#1e1e1e] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
         <div className="flex items-center gap-2.5">
