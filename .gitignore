@@ -67,3 +67,10 @@ sentinel/sentinel
 # Agentic / Scratch Workspace Artifacts
 .agents/
 .gemini/
+
+# Internal Documentation & Specs (Local Only)
+ARCHITECTURE_OVERVIEW.md
+DASHBOARD_UI_SPEC.md
+HEALER_BRAIN_SPEC.md
+SENTINEL_AGENT_SPEC.md
+KINTSUGI_COMPREHENSIVE_DOCUMENTATION.md
