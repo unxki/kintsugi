@@ -1,6 +1,7 @@
 import logging
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from app.config import settings
@@ -55,7 +56,7 @@ async def lifespan(app: FastAPI):
 
         logger.info("Database schemas verified.")
     except Exception as err:
-        logger.error(f"Database initialization error (continuing startup): {err}")
+        logger.error(f"Database initialization error (continuing startup): {err}", exc_info=True)
 
     yield
     logger.info("Shutting down Kintsugi Core Engine...")
@@ -77,6 +78,16 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Unhandled error on {request.method} {request.url.path}: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": str(exc), "type": type(exc).__name__, "path": request.url.path},
+    )
+
 
 # Include v1 Router
 app.include_router(api_router, prefix=settings.API_V1_STR)
