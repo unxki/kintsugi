@@ -458,7 +458,7 @@ export const App: React.FC = () => {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-5 sm:py-6 z-10 space-y-5 pb-24">
+      <main className="flex-1 max-w-[1600px] w-full mx-auto px-3 sm:px-6 lg:px-8 py-5 sm:py-6 z-10 space-y-5 pb-24">
         {/* Top Hero Section with Animated Terminal Decipher Transition */}
         <TerminalHeroHeader
           activeTab={activeTab}

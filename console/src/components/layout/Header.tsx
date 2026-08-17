@@ -108,7 +108,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="sticky top-0 z-40 bg-[#050505]/95 backdrop-blur-md border-b border-[#1a1a1a]">
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+      <div className="w-full max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-8">
         {/* Main Header Bar */}
         <div className="flex items-center justify-between h-14 md:h-16 gap-3">
           {/* Left: Brand Identity */}
@@ -123,7 +123,7 @@ export const Header: React.FC<HeaderProps> = ({
               </span>
             </div>
 
-            <div className="hidden xl:flex items-center text-[11px] text-[#6b7280] font-mono border-l border-[#1e1e1e] pl-3">
+            <div className="hidden 2xl:flex items-center text-[11px] text-[#6b7280] font-mono border-l border-[#1e1e1e] pl-3">
               <span className="text-[#00ff41] mr-1">$</span>
               <span>kintsugi --telemetry-stream</span>
             </div>
@@ -132,7 +132,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Center: Desktop Navigation Bar */}
           <nav
             ref={navRef}
-            className="hidden md:flex items-center gap-1 bg-[#0a0a0a] border border-[#1e1e1e] p-1 rounded-sm overflow-x-auto max-w-full [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] select-none"
+            className="hidden md:flex items-center gap-1.5 bg-[#0a0a0a] border border-[#1e1e1e] p-1 rounded-sm select-none shrink-0"
           >
             {navButtons}
           </nav>
