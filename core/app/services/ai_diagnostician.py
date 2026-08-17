@@ -69,7 +69,7 @@ class AIDiagnostician:
         provider = config.get("llm_provider", "heuristic").lower()
 
         # Execute LLM API if configured
-        if provider in ["openai", "gemini", "anthropic", "local_llm"]:
+        if provider in ["openai", "openrouter", "gemini", "anthropic", "local_llm"]:
             try:
                 diagnosis = await self._call_llm_api(
                     container_name=container_name,
