@@ -419,6 +419,10 @@ export const App: React.FC = () => {
       }
     } else if (command === "purge") {
       await handleClearIncidents();
+    } else if (command === "source" || command === "github" || command === "repo" || command === "about") {
+      appendLog("CLI", "SUCCESS", "Kintsugi Autonomous AIOps Platform by @unxki");
+      appendLog("CLI", "INFO", "  Repository: https://github.com/unxki/kintsugi");
+      appendLog("CLI", "INFO", "  Stack: Go Sentinel + Python FastAPI Core + PostgreSQL pgvector + React 19");
     } else {
       appendLog("CLI", "WARN", `Unknown command '${command}'. Type 'help' for available commands.`);
     }
