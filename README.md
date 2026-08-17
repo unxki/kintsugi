@@ -34,24 +34,81 @@ Named after the Japanese philosophy of repairing broken pottery with precious me
 ## Architecture
 
 ```mermaid
-graph TD
-    subgraph Host / Edge Node
-        D[Docker Engine / Container Mesh] -->|Events & Logs| S[Go Sentinel Daemon]
-        S -->|Zero-Data-Leak Scrubbing| S_Sanitize[Regex PII & Secret Redactor]
-        S -->|Flapping & Sliding Window| S_Guard[Crash Loop Guardrail]
+flowchart TB
+    %% Edge Layer
+    subgraph EDGE["Edge & Host Layer"]
+        direction TB
+        RUNTIME["Docker Engine / Container Runtime"]
+        
+        subgraph SENTINEL["Go Sentinel Daemon"]
+            direction TB
+            EVENT_STREAM["Docker Socket Event Stream"]
+            SANITIZER["Zero Data-Leak Sanitizer<br/><i>Regex & Entropy Redactor</i>"]
+            GUARDRAIL["Flapping Guardrail<br/><i>Sliding Window Circuit Breaker</i>"]
+            EXECUTOR["Remediation Executor<br/><i>Restart / Kill / Rollback / Prune</i>"]
+        end
     end
 
-    subgraph Control Plane & Diagnostic Brain
-        S_Sanitize -->|Sanitized Telemetry JSON| C[FastAPI Core Engine]
-        C -->|384-dim Embeddings| PG[(Supabase / PostgreSQL + pgvector)]
-        C -->|Structured JSON Prompting| LLM[Multi-Model Router: Gemini, OpenRouter, Claude, GPT, Local Ollama]
-        C -->|SSE Real-Time Feed| UI[React 19 Console]
+    %% Control Plane
+    subgraph CORE["Control Plane (FastAPI)"]
+        direction TB
+        API["Ingestion & API Gateway"]
+        RCA_ENGINE["AI Diagnostic Engine<br/><i>RCA & Confidence Scorer</i>"]
+        POLICY["Remediation Policy Engine<br/><i>Active / Passive Sentinel Mode</i>"]
+        BROADCASTER["SSE Telemetry Streamer"]
     end
 
-    subgraph Autonomous Remediation
-        C -->|Autonomous Policy Engine| S_Exec[Sentinel Remediation Executor]
-        S_Exec -->|Container Restart / Force Kill / Rollback / Volume Prune| D
+    %% Semantic Memory
+    subgraph MEMORY["Semantic Memory Layer"]
+        direction TB
+        PGVECTOR[("PostgreSQL + pgvector<br/><i>384-dim Embeddings</i>")]
+        INCIDENT_STORE[("Incident DB & Audit Logs")]
     end
+
+    %% LLM Gateway
+    subgraph LLM_GATEWAY["Multi-Model Reasoning Gateway"]
+        direction TB
+        ROUTER{{"Universal Model Router"}}
+        M_GEMINI["Google Gemini / Gemma"]
+        M_OR["OpenRouter (Claude, DeepSeek, Llama)"]
+        M_OPENAI["OpenAI (GPT-4o)"]
+        M_LOCAL["Local Ollama / Heuristic Engine"]
+    end
+
+    %% Operations Console
+    subgraph OPS["Operator Interface"]
+        direction TB
+        CONSOLE["React 19 Terminal Console<br/><i>Real-Time HUD & Interactive CLI REPL</i>"]
+    end
+
+    %% Event Ingestion & Sanitization Flow
+    RUNTIME -->|"Cgroup & Die Events"| EVENT_STREAM
+    EVENT_STREAM --> SANITIZER
+    SANITIZER --> GUARDRAIL
+    GUARDRAIL -->|"Scrubbed Telemetry Payload"| API
+
+    %% Diagnostic & Inference Flow
+    API --> RCA_ENGINE
+    RCA_ENGINE <-->|"Cosine Similarity Query"| PGVECTOR
+    RCA_ENGINE -->|"Structured JSON Request"| ROUTER
+
+    ROUTER --- M_GEMINI
+    ROUTER --- M_OR
+    ROUTER --- M_OPENAI
+    ROUTER --- M_LOCAL
+
+    ROUTER -->|"Structured RCA & Action Plan"| RCA_ENGINE
+    RCA_ENGINE --> POLICY
+
+    %% Remediation Loop
+    POLICY -->|"Autonomous Dispatch (Active Mode)"| EXECUTOR
+    EXECUTOR -->|"Container Self-Healing Action"| RUNTIME
+
+    %% Telemetry & Human-in-the-Loop Flow
+    POLICY -->|"Audit Records & Vectors"| INCIDENT_STORE
+    POLICY -->|"Real-Time Event Stream"| BROADCASTER
+    BROADCASTER -->|"Server-Sent Events (SSE)"| CONSOLE
+    CONSOLE -->|"Operator Override / Batch Heal"| API
 ```
 
 ---
