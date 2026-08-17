@@ -25,8 +25,7 @@ services:
     container_name: kintsugi-core
     restart: unless-stopped
     depends_on:
-      postgres:
-        condition: service_healthy
+      - postgres
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://kintsugi:kintsugi_secret@postgres:5432/kintsugi_db}
       SENTINEL_ENDPOINT: http://sentinel:8081
@@ -53,8 +52,7 @@ services:
     container_name: kintsugi-sentinel
     restart: unless-stopped
     depends_on:
-      core:
-        condition: service_healthy
+      - core
     environment:
       CORE_API_ENDPOINT: http://core:8000/api/v1
       PORT: 8081
