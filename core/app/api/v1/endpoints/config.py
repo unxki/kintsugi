@@ -132,96 +132,100 @@ async def update_system_config(
     """
     Update system configuration dynamically without rebooting containers.
     """
-    config = await get_or_create_db_config(db)
+    try:
+        config = await get_or_create_db_config(db)
 
-    if payload.llm_provider is not None:
-        config.llm_provider = payload.llm_provider
-    if payload.llm_model is not None:
-        config.llm_model = payload.llm_model
-    if payload.openai_api_key is not None:
-        config.openai_api_key = payload.openai_api_key.strip() if payload.openai_api_key.strip() else None
-    if payload.openrouter_api_key is not None:
-        config.openrouter_api_key = payload.openrouter_api_key.strip() if payload.openrouter_api_key.strip() else None
-    if payload.anthropic_api_key is not None:
-        config.anthropic_api_key = payload.anthropic_api_key.strip() if payload.anthropic_api_key.strip() else None
-    if payload.gemini_api_key is not None:
-        config.gemini_api_key = payload.gemini_api_key.strip() if payload.gemini_api_key.strip() else None
-    if payload.local_llm_endpoint is not None:
-        config.local_llm_endpoint = payload.local_llm_endpoint.strip() or "http://localhost:11434/v1"
-    if payload.custom_base_url is not None:
-        config.custom_base_url = payload.custom_base_url.strip() if payload.custom_base_url.strip() else None
-    if payload.operating_mode is not None:
-        config.operating_mode = payload.operating_mode
-    if payload.similarity_threshold is not None:
-        config.similarity_threshold = payload.similarity_threshold
-    if payload.confidence_threshold is not None:
-        config.confidence_threshold = payload.confidence_threshold
-    if payload.flap_threshold is not None:
-        config.flap_threshold = payload.flap_threshold
-    if payload.flap_window_seconds is not None:
-        config.flap_window_seconds = payload.flap_window_seconds
-    if payload.log_tail_lines is not None:
-        config.log_tail_lines = payload.log_tail_lines
-    if payload.auto_heal_timeout_ms is not None:
-        config.auto_heal_timeout_ms = payload.auto_heal_timeout_ms
+        if payload.llm_provider is not None:
+            config.llm_provider = payload.llm_provider
+        if payload.llm_model is not None:
+            config.llm_model = payload.llm_model
+        if payload.openai_api_key is not None:
+            config.openai_api_key = payload.openai_api_key.strip() if payload.openai_api_key.strip() else None
+        if payload.openrouter_api_key is not None:
+            config.openrouter_api_key = payload.openrouter_api_key.strip() if payload.openrouter_api_key.strip() else None
+        if payload.anthropic_api_key is not None:
+            config.anthropic_api_key = payload.anthropic_api_key.strip() if payload.anthropic_api_key.strip() else None
+        if payload.gemini_api_key is not None:
+            config.gemini_api_key = payload.gemini_api_key.strip() if payload.gemini_api_key.strip() else None
+        if payload.local_llm_endpoint is not None:
+            config.local_llm_endpoint = payload.local_llm_endpoint.strip() or "http://localhost:11434/v1"
+        if payload.custom_base_url is not None:
+            config.custom_base_url = payload.custom_base_url.strip() if payload.custom_base_url.strip() else None
+        if payload.operating_mode is not None:
+            config.operating_mode = payload.operating_mode
+        if payload.similarity_threshold is not None:
+            config.similarity_threshold = payload.similarity_threshold
+        if payload.confidence_threshold is not None:
+            config.confidence_threshold = payload.confidence_threshold
+        if payload.flap_threshold is not None:
+            config.flap_threshold = payload.flap_threshold
+        if payload.flap_window_seconds is not None:
+            config.flap_window_seconds = payload.flap_window_seconds
+        if payload.log_tail_lines is not None:
+            config.log_tail_lines = payload.log_tail_lines
+        if payload.auto_heal_timeout_ms is not None:
+            config.auto_heal_timeout_ms = payload.auto_heal_timeout_ms
 
-    config.updated_at = datetime.datetime.now(datetime.timezone.utc)
-    await db.commit()
-    await db.refresh(config)
+        config.updated_at = datetime.datetime.now(datetime.timezone.utc)
+        await db.commit()
+        await db.refresh(config)
 
-    # Sync cache
-    _cached_config["llm_provider"] = config.llm_provider
-    _cached_config["llm_model"] = config.llm_model
-    _cached_config["operating_mode"] = config.operating_mode
-    _cached_config["similarity_threshold"] = config.similarity_threshold
-    _cached_config["confidence_threshold"] = config.confidence_threshold
-    _cached_config["flap_threshold"] = config.flap_threshold
-    _cached_config["flap_window_seconds"] = config.flap_window_seconds
-    _cached_config["log_tail_lines"] = config.log_tail_lines
-    _cached_config["auto_heal_timeout_ms"] = config.auto_heal_timeout_ms
-    _cached_config["openai_api_key"] = config.openai_api_key
-    _cached_config["openrouter_api_key"] = config.openrouter_api_key
-    _cached_config["anthropic_api_key"] = config.anthropic_api_key
-    _cached_config["gemini_api_key"] = config.gemini_api_key
-    _cached_config["local_llm_endpoint"] = config.local_llm_endpoint
-    _cached_config["custom_base_url"] = config.custom_base_url
+        # Sync cache
+        _cached_config["llm_provider"] = config.llm_provider
+        _cached_config["llm_model"] = config.llm_model
+        _cached_config["operating_mode"] = config.operating_mode
+        _cached_config["similarity_threshold"] = config.similarity_threshold
+        _cached_config["confidence_threshold"] = config.confidence_threshold
+        _cached_config["flap_threshold"] = config.flap_threshold
+        _cached_config["flap_window_seconds"] = config.flap_window_seconds
+        _cached_config["log_tail_lines"] = config.log_tail_lines
+        _cached_config["auto_heal_timeout_ms"] = config.auto_heal_timeout_ms
+        _cached_config["openai_api_key"] = config.openai_api_key
+        _cached_config["openrouter_api_key"] = config.openrouter_api_key
+        _cached_config["anthropic_api_key"] = config.anthropic_api_key
+        _cached_config["gemini_api_key"] = config.gemini_api_key
+        _cached_config["local_llm_endpoint"] = config.local_llm_endpoint
+        _cached_config["custom_base_url"] = config.custom_base_url
 
-    # Broadcast update event over SSE
-    await sse_broadcaster.broadcast(
-        TelemetryEvent(
-            event_type="config.updated",
-            incident_id="",
-            data={
-                "llm_provider": config.llm_provider,
-                "llm_model": config.llm_model,
-                "operating_mode": config.operating_mode,
-                "similarity_threshold": config.similarity_threshold,
-                "confidence_threshold": config.confidence_threshold,
-                "custom_base_url": config.custom_base_url,
-            }
+        # Broadcast update event over SSE
+        await sse_broadcaster.broadcast(
+            TelemetryEvent(
+                event_type="config.updated",
+                incident_id="",
+                data={
+                    "llm_provider": config.llm_provider,
+                    "operating_mode": config.operating_mode,
+                }
+            )
         )
-    )
 
-    logger.info(f"System Configuration updated: provider={config.llm_provider}, mode={config.operating_mode}, model={config.llm_model}")
+        logger.info(
+            f"System Configuration updated: provider={config.llm_provider}, mode={config.operating_mode}, model={config.llm_model}"
+        )
 
-    return SystemConfigResponse(
-        id=config.id,
-        llm_provider=config.llm_provider,
-        llm_model=config.llm_model,
-        openai_api_key_configured=bool(config.openai_api_key),
-        anthropic_api_key_configured=bool(config.anthropic_api_key),
-        gemini_api_key_configured=bool(config.gemini_api_key),
-        local_llm_endpoint=config.local_llm_endpoint or "http://localhost:11434/v1",
-        custom_base_url=config.custom_base_url,
-        operating_mode=config.operating_mode,
-        similarity_threshold=config.similarity_threshold,
-        confidence_threshold=config.confidence_threshold,
-        flap_threshold=config.flap_threshold,
-        flap_window_seconds=config.flap_window_seconds,
-        log_tail_lines=config.log_tail_lines,
-        auto_heal_timeout_ms=config.auto_heal_timeout_ms,
-        updated_at=config.updated_at,
-    )
+        return SystemConfigResponse(
+            id=config.id,
+            llm_provider=config.llm_provider,
+            llm_model=config.llm_model,
+            openai_api_key_configured=bool(config.openai_api_key),
+            openrouter_api_key_configured=bool(config.openrouter_api_key or (config.openai_api_key and "openrouter" in str(config.custom_base_url or ""))),
+            anthropic_api_key_configured=bool(config.anthropic_api_key),
+            gemini_api_key_configured=bool(config.gemini_api_key),
+            local_llm_endpoint=config.local_llm_endpoint or "http://localhost:11434/v1",
+            custom_base_url=config.custom_base_url,
+            operating_mode=config.operating_mode,
+            similarity_threshold=config.similarity_threshold,
+            confidence_threshold=config.confidence_threshold,
+            flap_threshold=config.flap_threshold,
+            flap_window_seconds=config.flap_window_seconds,
+            log_tail_lines=config.log_tail_lines,
+            auto_heal_timeout_ms=config.auto_heal_timeout_ms,
+            updated_at=config.updated_at,
+        )
+    except Exception as e:
+        logger.error(f"Failed to update system configuration: {e}")
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to persist configuration: {str(e)}")
 
 
 @router.post("/test-llm", response_model=LLMTestResponse)

@@ -30,12 +30,28 @@ async def lifespan(app: FastAPI):
             # Create tables if not existing
             await conn.run_sync(Base.metadata.create_all)
 
-            # Ensure column migrations for existing tables
+            # Ensure all column migrations exist for system_configuration on PostgreSQL
             if "postgres" in settings.DATABASE_URL:
-                try:
-                    await conn.execute(text("ALTER TABLE system_configuration ADD COLUMN IF NOT EXISTS custom_base_url VARCHAR(512)"))
-                except Exception as e:
-                    logger.warning(f"Migration notice: {e}")
+                migrations = [
+                    "ALTER TABLE system_configuration ADD COLUMN IF NOT EXISTS custom_base_url VARCHAR(512)",
+                    "ALTER TABLE system_configuration ADD COLUMN IF NOT EXISTS openrouter_api_key VARCHAR(255)",
+                    "ALTER TABLE system_configuration ADD COLUMN IF NOT EXISTS gemini_api_key VARCHAR(255)",
+                    "ALTER TABLE system_configuration ADD COLUMN IF NOT EXISTS openai_api_key VARCHAR(255)",
+                    "ALTER TABLE system_configuration ADD COLUMN IF NOT EXISTS anthropic_api_key VARCHAR(255)",
+                    "ALTER TABLE system_configuration ADD COLUMN IF NOT EXISTS local_llm_endpoint VARCHAR(255) DEFAULT 'http://localhost:11434/v1'",
+                    "ALTER TABLE system_configuration ADD COLUMN IF NOT EXISTS operating_mode VARCHAR(32) DEFAULT 'ACTIVE'",
+                    "ALTER TABLE system_configuration ADD COLUMN IF NOT EXISTS similarity_threshold FLOAT DEFAULT 0.85",
+                    "ALTER TABLE system_configuration ADD COLUMN IF NOT EXISTS confidence_threshold FLOAT DEFAULT 0.75",
+                    "ALTER TABLE system_configuration ADD COLUMN IF NOT EXISTS flap_threshold INTEGER DEFAULT 3",
+                    "ALTER TABLE system_configuration ADD COLUMN IF NOT EXISTS flap_window_seconds INTEGER DEFAULT 60",
+                    "ALTER TABLE system_configuration ADD COLUMN IF NOT EXISTS log_tail_lines INTEGER DEFAULT 100",
+                    "ALTER TABLE system_configuration ADD COLUMN IF NOT EXISTS auto_heal_timeout_ms INTEGER DEFAULT 5000",
+                ]
+                for mig in migrations:
+                    try:
+                        await conn.execute(text(mig))
+                    except Exception as e:
+                        logger.warning(f"Migration notice ({mig}): {e}")
 
         logger.info("Database schemas verified.")
     except Exception as err:
