@@ -1,4 +1,4 @@
-# ⚡ Kintsugi: Autonomous AIOps & Self-Healing Cloud Runtime
+# Kintsugi: Autonomous AIOps & Self-Healing Cloud Runtime
 
 <div align="center">
 
@@ -11,7 +11,7 @@
   ╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝   ╚═╝   ╚══════╝ ╚═════╝  ╚═════╝ ╚═╝
 ```
 
-**Next-Generation Autonomous Incident Response, Semantic Diagnostic Memory & Microservice Self-Healing Mesh**
+**Autonomous Incident Response, Semantic Diagnostic Memory & Microservice Self-Healing Mesh**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![FastAPI](https://img.shields.io/badge/Core-FastAPI%20%26%20Python%203.12+-009688.svg)](https://fastapi.tiangolo.com)
@@ -23,15 +23,15 @@
 
 ---
 
-## 📖 Overview
+## Overview
 
-**Kintsugi** is an enterprise-grade autonomous Site Reliability Engineering (AIOps) system that monitors Docker and Kubernetes container runtimes, automatically intercepts failures, strips sensitive PII/credentials at the edge, vectors error traces against historical incident memory using `pgvector`, and dispatches autonomous self-healing remediation pipelines in milliseconds.
+**Kintsugi** is an enterprise-grade autonomous Site Reliability Engineering (AIOps) system that monitors Docker and Kubernetes container runtimes, intercepts failures in real-time, strips sensitive PII/credentials at the edge, vectors error traces against historical incident memory using `pgvector`, and dispatches self-healing remediation pipelines in milliseconds.
 
-Named after the traditional Japanese art of repairing broken pottery with gold lacquer (*Kintsugi*), the platform treats production failures as opportunities for architectural resilience.
+Named after the Japanese philosophy of repairing broken pottery with precious metals (*Kintsugi*), the platform treats production failures as opportunities for architectural resilience and autonomous recovery.
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```mermaid
 graph TD
@@ -45,7 +45,7 @@ graph TD
         S_Sanitize -->|Sanitized Telemetry JSON| C[FastAPI Core Engine]
         C -->|384-dim Embeddings| PG[(Supabase / PostgreSQL + pgvector)]
         C -->|Structured JSON Prompting| LLM[Multi-Model Router: Gemini, OpenRouter, Claude, GPT, Local Ollama]
-        C -->|SSE Real-Time Feed| UI[React 19 Cyber Console]
+        C -->|SSE Real-Time Feed| UI[React 19 Console]
     end
 
     subgraph Autonomous Remediation
@@ -56,27 +56,27 @@ graph TD
 
 ---
 
-## ✨ Key Features
+## Core Capabilities
 
-- **🚀 Go Sentinel Daemon**: Low-overhead edge agent listening directly to container socket streams with microsecond incident detection.
-- **🔒 Zero Data-Leak Sanitizer**: High-speed regex and entropy filters redacting JWTs, API keys, database connection strings, RSA private keys, and passwords before network dispatch.
-- **🧠 Multi-Model Diagnostic Engine**:
-  - **Google Gemini** (`gemini-3.5-flash`, `gemini-3.5-flash-lite`, `gemini-flash-lite-latest`, Gemma 4)
-  - **OpenRouter & Universal Gateways** (Claude 3.7 Sonnet, DeepSeek R1, Llama 3.3 70B, Qwen 2.5 Coder)
-  - **OpenAI** (GPT-4o, GPT-4o-mini)
-  - **Anthropic** (Claude 3.5 Sonnet, Haiku)
-  - **Local Ollama / vLLM / Heuristic Fallbacks**
-- **⚡ Semantic Memory (`pgvector`)**: 384-dimensional cosine similarity querying against past cluster outages to accelerate MTTR to sub-second recovery.
-- **🛡️ Flapping Circuit Breakers**: Sliding-window algorithms preventing destructive crash loops and auto-escalating to human SREs.
-- **🎛️ Dual Operating Modes**:
+- **Go Sentinel Daemon**: Low-overhead edge agent listening directly to container runtime event streams with microsecond incident detection.
+- **Zero Data-Leak Sanitizer**: High-speed regex and entropy filters redacting JWTs, API keys, database connection strings, RSA private keys, and passwords before network dispatch.
+- **Multi-Model Diagnostic Engine**:
+  - **Google Gemini**: `gemini-3.5-flash`, `gemini-3.5-flash-lite`, `gemini-flash-lite-latest`, Gemma open weights
+  - **OpenRouter & Universal API Routers**: Claude 3.7 Sonnet, DeepSeek R1, Llama 3.3 70B, Qwen 2.5 Coder
+  - **OpenAI**: GPT-4o, GPT-4o-mini
+  - **Anthropic**: Claude 3.5 Sonnet, Claude 3.5 Haiku
+  - **Local Models**: Ollama / vLLM / deterministic heuristic fallback engine
+- **Semantic Memory (pgvector)**: 384-dimensional cosine similarity search across historical cluster outages to minimize Mean Time to Recovery (MTTR).
+- **Flapping Circuit Breakers**: Sliding-window algorithms preventing destructive crash loops and escalating persistent faults to human SREs.
+- **Dual Operating Modes**:
   - **Active Mode**: Immediate autonomous remediation and health verification.
   - **Passive Sentinel Mode (Dry-Run)**: Observes crashes, runs RCA diagnostics, generates proposals, logs execution traces, and leaves container state unmodified.
-- **⚡ Cluster Batch Remediation**: 1-click and interactive CLI commands (`$ heal-all-unresolved`, `heal all`) to sweep and heal all unresolved or passive incidents across the cluster.
-- **💻 Cyberpunk Matrix Console**: Real-time HUD, animated ASCII hero banners, demultiplexed live telemetry stream, interactive CLI REPL, and visual vector similarity explorer.
+- **Cluster Batch Remediation**: 1-click and interactive CLI commands (`$ heal-all-unresolved`, `heal all`) to sweep and heal all unresolved or passive incidents across the cluster.
+- **Terminal Operations Console**: Real-time HUD, demultiplexed live telemetry stream, interactive CLI REPL, and visual vector similarity explorer.
 
 ---
 
-## 🚀 Quick Start (Local Docker Compose)
+## Quick Start (Local Docker Compose)
 
 ### 1. Clone & Configure
 ```bash
@@ -93,13 +93,13 @@ docker compose up --build -d
 ```
 
 ### 3. Access Services
-- **Cyber Console**: [http://localhost:5173](http://localhost:5173)
+- **Console Interface**: [http://localhost:5173](http://localhost:5173)
 - **FastAPI Core OpenAPI**: [http://localhost:8000/docs](http://localhost:8000/docs)
 - **PostgreSQL / pgvector**: `localhost:5432`
 
 ---
 
-## 🧪 Testing & Verification
+## Testing & Verification
 
 Run the unified test suite across all sub-services:
 ```bash
@@ -111,7 +111,7 @@ make test
 
 ---
 
-## ☁️ Deployment Topology
+## Deployment Topology
 
 - **Database**: [Supabase](https://supabase.com) (PostgreSQL + `pgvector` extension enabled)
 - **Sentinel Daemon**: Azure Linux VM / Kubernetes DaemonSet with Docker Socket access
@@ -120,6 +120,6 @@ make test
 
 ---
 
-## 📜 License
+## License
 
-MIT License. Built with ❤️ for resilient autonomous infrastructure.
+MIT License. Built for resilient autonomous infrastructure.
