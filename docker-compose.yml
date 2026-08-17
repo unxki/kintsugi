@@ -1,0 +1,77 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: kintsugi-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: kintsugi
+      POSTGRES_PASSWORD: kintsugi_secret
+      POSTGRES_DB: kintsugi_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kintsugi -d kintsugi_db"]
+      interval: 3s
+      timeout: 5s
+      retries: 10
+      start_period: 3s
+
+  core:
+    build:
+      context: ./core
+      dockerfile: Dockerfile
+    container_name: kintsugi-core
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://kintsugi:kintsugi_secret@postgres:5432/kintsugi_db
+      SENTINEL_ENDPOINT: http://sentinel:8081
+      LLM_PROVIDER: heuristic
+      PROJECT_NAME: Kintsugi Core
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+      interval: 3s
+      timeout: 5s
+      retries: 10
+      start_period: 3s
+
+  sentinel:
+    build:
+      context: ./sentinel
+      dockerfile: Dockerfile
+    container_name: kintsugi-sentinel
+    restart: unless-stopped
+    depends_on:
+      core:
+        condition: service_healthy
+    environment:
+      CORE_API_ENDPOINT: http://core:8000/api/v1
+      PORT: 8081
+      DOCKER_HOST: unix:///var/run/docker.sock
+      FLAP_THRESHOLD: 3
+      FLAP_WINDOW_SECONDS: 60
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "8081:8081"
+
+  console:
+    build:
+      context: ./console
+      dockerfile: Dockerfile
+    container_name: kintsugi-console
+    restart: unless-stopped
+    depends_on:
+      core:
+        condition: service_healthy
+    ports:
+      - "5173:5173"
+
+volumes:
+  pgdata:

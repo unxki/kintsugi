@@ -1,0 +1,9 @@
+FROM golang:1.22-alpine AS builder
+WORKDIR /app
+COPY main_panic.go .
+RUN go build -o panic_crash main_panic.go
+
+FROM alpine:3.19
+WORKDIR /app
+COPY --from=builder /app/panic_crash .
+ENTRYPOINT ["./panic_crash"]
