@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { TelemetryEvent } from "../types/incident";
+import { apiUrl } from "../utils/api";
 
 interface UseSSEReturn {
   isConnected: boolean;
@@ -23,13 +24,15 @@ export function useSSE(
   const eventSourceRef = useRef<EventSource | null>(null);
   const reconnectTimeoutRef = useRef<number | null>(null);
 
+  const normalizedUrl = apiUrl(url);
+
   const connect = useCallback(() => {
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
     }
 
     try {
-      const es = new EventSource(url);
+      const es = new EventSource(normalizedUrl);
       eventSourceRef.current = es;
 
       es.onopen = () => {

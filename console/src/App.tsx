@@ -13,6 +13,7 @@ import { MatrixBackground } from "./components/common/MatrixBackground";
 import { useSSE } from "./hooks/useSSE";
 import { Incident, SystemStats, ContainerWorkload, TelemetryEvent } from "./types/incident";
 import { TerminalHeroHeader } from "./components/layout/TerminalHeroHeader";
+import { apiUrl } from "./utils/api";
 import { Terminal, Shield, Cpu, Database } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -89,7 +90,7 @@ export const App: React.FC = () => {
   // Fetch historical incidents
   const fetchIncidents = useCallback(async () => {
     try {
-      const resp = await fetch("/api/v1/incidents");
+      const resp = await fetch(apiUrl("/api/v1/incidents"));
       if (resp.ok) {
         const data = await resp.json();
         if (Array.isArray(data)) {
@@ -104,7 +105,7 @@ export const App: React.FC = () => {
   // Fetch monitored workloads with Map-based deduplication
   const fetchWorkloads = useCallback(async () => {
     try {
-      const resp = await fetch("/api/v1/containers");
+      const resp = await fetch(apiUrl("/api/v1/containers"));
       if (resp.ok) {
         const data = await resp.json();
         if (Array.isArray(data)) {
@@ -127,7 +128,7 @@ export const App: React.FC = () => {
   // Fetch telemetry stats
   const fetchStats = useCallback(async () => {
     try {
-      const resp = await fetch("/api/v1/telemetry/stats");
+      const resp = await fetch(apiUrl("/api/v1/telemetry/stats"));
       if (resp.ok) {
         const data = await resp.json();
         setStats(data);
@@ -266,7 +267,7 @@ export const App: React.FC = () => {
 
     // Dispatch to backend API (SSE stream will automatically handle detection & progression)
     try {
-      await fetch("/api/v1/actions/simulate", {
+      await fetch(apiUrl("/api/v1/actions/simulate"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ scenario, container_name: targetName }),
@@ -307,7 +308,7 @@ export const App: React.FC = () => {
     );
 
     try {
-      await fetch("/api/v1/actions/remediate", {
+      await fetch(apiUrl("/api/v1/actions/remediate"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ incident_id: incidentId, action }),
@@ -350,7 +351,7 @@ export const App: React.FC = () => {
     );
 
     try {
-      const resp = await fetch("/api/v1/actions/batch-remediate", { method: "POST" });
+      const resp = await fetch(apiUrl("/api/v1/actions/batch-remediate"), { method: "POST" });
       if (resp.ok) {
         const data = await resp.json();
         appendLog("POLICY", "SUCCESS", `Batch remediation queued: ${data.count} incidents resolving autonomously.`);
@@ -368,7 +369,7 @@ export const App: React.FC = () => {
     setIncidents([]);
     appendLog("CLI", "WARN", "Incident log stream purged by operator.");
     try {
-      await fetch("/api/v1/incidents/clear", { method: "DELETE" });
+      await fetch(apiUrl("/api/v1/incidents/clear"), { method: "DELETE" });
       await fetchStats();
       showToast("Cleared all incidents.", "info");
     } catch (err) {
@@ -421,7 +422,7 @@ export const App: React.FC = () => {
   // Select incident for modal detail
   const handleSelectIncident = async (inc: Incident) => {
     try {
-      const resp = await fetch(`/api/v1/incidents/${inc.id}`);
+      const resp = await fetch(apiUrl(`/api/v1/incidents/${inc.id}`));
       if (resp.ok) {
         const fullDetail = await resp.json();
         setSelectedIncident(fullDetail);

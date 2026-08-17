@@ -28,9 +28,14 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql+asyncpg://kintsugi:kintsugi_secret@postgres:5432/kintsugi_db
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://kintsugi:kintsugi_secret@postgres:5432/kintsugi_db}
       SENTINEL_ENDPOINT: http://sentinel:8081
-      LLM_PROVIDER: heuristic
+      LLM_PROVIDER: ${LLM_PROVIDER:-heuristic}
+      LLM_MODEL: ${LLM_MODEL:-gemini-3.5-flash}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       PROJECT_NAME: Kintsugi Core
     ports:
       - "8000:8000"

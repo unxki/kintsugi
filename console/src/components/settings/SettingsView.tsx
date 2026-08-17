@@ -21,6 +21,7 @@ import {
   Globe,
   Filter
 } from "lucide-react";
+import { apiUrl } from "../../utils/api";
 
 interface SystemConfig {
   llm_provider: string;
@@ -138,7 +139,7 @@ const ROUTER_PRESETS = [
 ];
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
-  apiEndpoint = "http://localhost:8000/api/v1",
+  apiEndpoint = apiUrl("/api/v1"),
 }) => {
   const [config, setConfig] = useState<SystemConfig>({
     llm_provider: "heuristic",
@@ -415,7 +416,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         // When switching to ACTIVE, sweep cluster and auto-heal all passive/unresolved incidents
         if (mode === "ACTIVE") {
           try {
-            await fetch("/api/v1/actions/batch-remediate", { method: "POST" });
+            await fetch(apiUrl("/api/v1/actions/batch-remediate"), { method: "POST" });
           } catch (sweepErr) {
             console.warn("Auto-sweep on mode toggle:", sweepErr);
           }
