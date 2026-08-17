@@ -267,11 +267,16 @@ export const App: React.FC = () => {
 
     // Dispatch to backend API (SSE stream will automatically handle detection & progression)
     try {
-      await fetch(apiUrl("/api/v1/actions/simulate"), {
+      const res = await fetch(apiUrl("/api/v1/actions/simulate"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ scenario, container_name: targetName }),
       });
+      if (res.status === 429) {
+        const errData = await res.json();
+        showToast(errData.detail || "Rate limit reached. Please wait a few seconds.", "danger");
+        appendLog("CHAOS", "WARN", "Simulation throttled by VM protection rate limiter.");
+      }
     } catch (err) {
       console.warn("Chaos simulation request failed:", err);
     }

@@ -1,11 +1,13 @@
+import time
 import uuid
 import datetime
+from collections import deque
 from datetime import timezone
 from typing import Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, or_
+from sqlalchemy import select, or_, func, delete
 
 
 from app.db.session import get_db, AsyncSessionLocal
@@ -13,6 +15,15 @@ from app.db.models import Incident, IncidentLog
 from app.services.remediation_policy import remediation_engine
 
 router = APIRouter()
+
+# Resource Protection: Sliding window rate limiter for chaos simulations
+# Max 6 simulations per 10 seconds across the cluster to protect lightweight VM
+_CHAOS_WINDOW_SECONDS = 10.0
+_MAX_CHAOS_PER_WINDOW = 6
+_chaos_timestamps: deque = deque()
+
+# Maximum stored incidents before pruning oldest resolved ones
+_MAX_STORED_INCIDENTS = 60
 
 
 class ManualRemediateRequest(BaseModel):
@@ -46,7 +57,12 @@ async def trigger_manual_remediation(
         payload.action,
         payload.parameters,
     )
-    return {"status": "TRIGGERED", "incident_id": payload.incident_id, "action": payload.action}
+    return {
+        "status": "DISPATCHED",
+        "incident_id": incident.id,
+        "action": payload.action,
+        "message": f"Manual remediation '{payload.action}' dispatched to Sentinel daemon."
+    }
 
 
 @router.post("/remediate-all")
@@ -56,28 +72,30 @@ async def trigger_batch_remediation(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Autonomously scan and remediate all unresolved, passive-observed, or escalated incidents in the cluster.
+    Operator action: auto-heal all currently unresolved (flapping/escalated/pending) incidents.
     """
-    stmt = (
-        select(Incident)
-        .filter(
-            or_(
-                Incident.status != "RESOLVED",
-                Incident.remediation_status == "PASSIVE_OBSERVED",
-                Incident.remediation_status == "ESCALATED",
-                Incident.is_flapping == True,
-            )
+    stmt = select(Incident).filter(
+        or_(
+            Incident.status != "RESOLVED",
+            Incident.remediation_status != "SUCCESS",
         )
-        .order_by(Incident.created_at.desc())
     )
     result = await db.execute(stmt)
-    unresolved_incidents = result.scalars().all()
+    unresolved = result.scalars().all()
+
+    if not unresolved:
+        return {
+            "status": "NO_OP",
+            "count": 0,
+            "message": "All workloads healthy. No unresolved incidents to remediate."
+        }
 
     dispatched_ids = []
-    for inc in unresolved_incidents:
-        action = inc.remediation_proposal or inc.action_taken or "RESTART_CONTAINER"
-        if "PASSIVE_OBSERVED" in action:
-            # Extract proposed action inside parenthesis if present
+    for inc in unresolved:
+        action = inc.action_taken or inc.remediation_proposal or "RESTART_CONTAINER"
+        if action == "ESCALATE_MANUAL" or not action:
+            action = "RESTART_CONTAINER"
+        else:
             if "(" in action and ")" in action:
                 action = action.split("(")[1].split(")")[0].strip()
             else:
@@ -100,7 +118,6 @@ async def trigger_batch_remediation(
     }
 
 
-
 @router.post("/simulate")
 async def simulate_chaos_incident(
     payload: ChaosSimulationRequest,
@@ -109,7 +126,39 @@ async def simulate_chaos_incident(
 ):
     """
     Simulate a realistic container incident to test the full AIOps healing pipeline.
+    Includes rate-limiting and auto-pruning to protect lightweight cloud VM.
     """
+    # 1. Rate-limiting check
+    now = time.time()
+    while _chaos_timestamps and now - _chaos_timestamps[0] > _CHAOS_WINDOW_SECONDS:
+        _chaos_timestamps.popleft()
+
+    if len(_chaos_timestamps) >= _MAX_CHAOS_PER_WINDOW:
+        raise HTTPException(
+            status_code=429,
+            detail="Chaos simulation rate limit reached (max 6 per 10s to protect lightweight VM). Please wait a few seconds."
+        )
+    _chaos_timestamps.append(now)
+
+    # 2. Bounded Storage Check: Auto-prune old resolved incidents
+    try:
+        count_stmt = select(func.count(Incident.id))
+        res_count = await db.execute(count_stmt)
+        total_inc = res_count.scalar_one() or 0
+        if total_inc >= _MAX_STORED_INCIDENTS:
+            subq = (
+                select(Incident.id)
+                .filter(Incident.status == "RESOLVED")
+                .order_by(Incident.created_at.asc())
+                .limit(total_inc - _MAX_STORED_INCIDENTS + 10)
+            )
+            old_ids_res = await db.execute(subq)
+            old_ids = old_ids_res.scalars().all()
+            if old_ids:
+                del_stmt = delete(Incident).where(Incident.id.in_(old_ids))
+                await db.execute(del_stmt)
+    except Exception:
+        pass
     inc_id = f"inc_{uuid.uuid4().hex[:8]}"
 
     scenarios = {
