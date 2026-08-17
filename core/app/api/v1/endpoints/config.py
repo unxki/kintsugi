@@ -454,6 +454,8 @@ async def fetch_provider_models(payload: ModelListRequest, db: AsyncSession = De
     if not api_key:
         if provider == "openai":
             api_key = config.openai_api_key or settings.OPENAI_API_KEY
+        elif provider == "openrouter":
+            api_key = config.openrouter_api_key or config.openai_api_key or settings.OPENAI_API_KEY
         elif provider == "anthropic":
             api_key = config.anthropic_api_key or settings.ANTHROPIC_API_KEY
         elif provider == "gemini":
@@ -561,6 +563,9 @@ async def fetch_provider_models(payload: ModelListRequest, db: AsyncSession = De
     if provider == "openrouter" or (provider == "openai" and custom_base_url and "openrouter" in custom_base_url.lower()):
         default_openrouter = [
             "anthropic/claude-3.7-sonnet",
+            "google/gemma-4-31b-it:free",
+            "google/gemma-4-26b-a4b-it:free",
+            "google/gemma-2-27b-it",
             "deepseek/deepseek-r1",
             "meta-llama/llama-3.3-70b-instruct",
             "google/gemini-2.0-flash-001",

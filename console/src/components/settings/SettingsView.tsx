@@ -80,6 +80,9 @@ const PROVIDER_PRESETS: {
     defaultBaseUrl: "https://openrouter.ai/api/v1",
     models: [
       "anthropic/claude-3.7-sonnet",
+      "google/gemma-4-31b-it:free",
+      "google/gemma-4-26b-a4b-it:free",
+      "google/gemma-2-27b-it",
       "deepseek/deepseek-r1",
       "meta-llama/llama-3.3-70b-instruct",
       "google/gemini-2.0-flash-001",
@@ -118,7 +121,15 @@ const PROVIDER_PRESETS: {
     badge: "AIR-GAPPED",
     desc: "Self-hosted OpenAI-compatible inference server (Ollama, vLLM, LocalAI) for air-gapped security.",
     defaultModel: "deepseek-r1:latest",
-    models: ["deepseek-r1:latest", "llama3.3:latest", "qwen2.5-coder:latest", "mistral-small:latest"],
+    models: [
+      "deepseek-r1:latest",
+      "llama3.3:latest",
+      "qwen2.5-coder:32b",
+      "mistral:latest",
+      "phi4:latest",
+      "gemma2:27b",
+      "custom-model",
+    ],
   },
   heuristic: {
     name: "Deterministic Heuristic Engine",
@@ -143,7 +154,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 }) => {
   const [config, setConfig] = useState<SystemConfig>({
     llm_provider: "heuristic",
-    llm_model: "gemini-flash-lite-latest",
+    llm_model: "deterministic-regex-v1",
     openai_api_key_configured: false,
     openrouter_api_key_configured: false,
     anthropic_api_key_configured: false,
@@ -159,27 +170,34 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     auto_heal_timeout_ms: 5000,
   });
 
-  // Sensitive input fields
+  // Local form state
   const [openaiKey, setOpenaiKey] = useState("");
   const [openrouterKey, setOpenrouterKey] = useState("");
   const [anthropicKey, setAnthropicKey] = useState("");
   const [geminiKey, setGeminiKey] = useState("");
   const [customBaseUrl, setCustomBaseUrl] = useState("");
-  const [showKeys, setShowKeys] = useState<{ [key: string]: boolean }>({});
 
+  const [availableModels, setAvailableModels] = useState<string[]>(PROVIDER_PRESETS.heuristic.models);
+  const [isLiveModels, setIsLiveModels] = useState(false);
+  const [isFetchingModels, setIsFetchingModels] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Dynamic Model Fetching & Search State
-  const [availableModels, setAvailableModels] = useState<string[]>(PROVIDER_PRESETS.heuristic.models);
-  const [isFetchingModels, setIsFetchingModels] = useState(false);
-  const [isLiveModels, setIsLiveModels] = useState(false);
+  // Search & Filter
   const [modelSearchQuery, setModelSearchQuery] = useState("");
   const [vendorFilter, setVendorFilter] = useState("all");
 
-  // Connectivity Test State
+  // Show/Hide Key toggles
+  const [showKeys, setShowKeys] = useState<{ [key: string]: boolean }>({
+    openai: false,
+    openrouter: false,
+    anthropic: false,
+    gemini: false,
+  });
+
+  // LLM Connectivity Testing State
   const [isTestingLLM, setIsTestingLLM] = useState(false);
   const [testResult, setTestResult] = useState<{
     success: boolean;
@@ -187,12 +205,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     model: string;
     latency_ms: number;
     message: string;
-    error?: string | null;
+    error?: string;
   } | null>(null);
 
   const fetchConfig = async () => {
-    setIsLoading(true);
-    setErrorMessage(null);
     try {
       const res = await fetch(`${apiEndpoint}/config`);
       if (res.ok) {
@@ -201,12 +217,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         if (data.custom_base_url) {
           setCustomBaseUrl(data.custom_base_url);
         }
-        fetchModelsForProvider(data.llm_provider, data);
-      } else {
-        setErrorMessage("Failed to fetch system configuration from Core API.");
+        await fetchModelsForProvider(data.llm_provider, data);
       }
     } catch (err) {
-      setErrorMessage("Could not connect to Kintsugi Core API server.");
+      console.warn("Failed to load live configuration:", err);
     } finally {
       setIsLoading(false);
     }
@@ -214,7 +228,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
   useEffect(() => {
     fetchConfig();
-  }, [apiEndpoint]);
+  }, []);
 
   const fetchModelsForProvider = async (provider: string, currentCfg?: SystemConfig) => {
     setIsFetchingModels(true);
@@ -240,11 +254,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       if (res.ok) {
         const data = await res.json();
         if (data.models && data.models.length > 0) {
-          setAvailableModels(data.models);
-          setIsLiveModels(Boolean(data.is_live_fetched));
-          if (!data.models.includes(cfg.llm_model)) {
-            setConfig((prev) => ({ ...prev, llm_model: data.default_model || data.models[0] }));
+          let modelsList = [...data.models];
+          if (cfg.llm_model && !modelsList.includes(cfg.llm_model)) {
+            modelsList = [cfg.llm_model, ...modelsList];
           }
+          setAvailableModels(modelsList);
+          setIsLiveModels(Boolean(data.is_live_fetched));
           return;
         }
       }
@@ -256,7 +271,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
     // Fallback to presets
     const preset = PROVIDER_PRESETS[provider] || PROVIDER_PRESETS.heuristic;
-    setAvailableModels(preset.models);
+    let presetModels = [...preset.models];
+    if (cfg.llm_model && !presetModels.includes(cfg.llm_model)) {
+      presetModels = [cfg.llm_model, ...presetModels];
+    }
+    setAvailableModels(presetModels);
     setIsLiveModels(false);
   };
 
